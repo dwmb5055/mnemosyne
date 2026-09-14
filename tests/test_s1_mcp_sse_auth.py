@@ -1148,6 +1148,11 @@ class TestSingleTokenNoIdentityBinding:
     bind an author identity (no enforced 'default' principal, explicit
     author_id / MNEMOSYNE_AUTHOR_ID keep prior precedence)."""
 
+    @pytest.fixture
+    def _before_connection_reset(self, tmp_path, monkeypatch):
+        """Select the isolated data path before the global reset imports core."""
+        monkeypatch.setenv("MNEMOSYNE_DATA_DIR", str(tmp_path))
+
     def _build_single(self, monkeypatch, token):
         monkeypatch.delenv("MNEMOSYNE_MCP_TOKENS", raising=False)
         monkeypatch.setenv("MNEMOSYNE_MCP_TOKEN", token)

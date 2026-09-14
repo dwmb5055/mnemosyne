@@ -560,6 +560,8 @@ memory bank to network clients, so it requires authentication; the
 `streamable-http` transport additionally requires
 `MNEMOSYNE_MCP_ALLOWED_HOSTS`, with `MNEMOSYNE_MCP_ALLOWED_ORIGINS` optionally
 restricting browser origins.
+Bearer tokens on a non-loopback HTTP bind require TLS termination in front of
+the server, using a reverse proxy or secure tunnel.
 
 Mnemosyne does not currently expose a standalone REST API server.
 

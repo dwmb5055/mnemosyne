@@ -53,6 +53,10 @@ class TestIsLoopback:
 class TestResolveSseAuth:
     """`_resolve_sse_auth` is the gate that enforces the hardened policy."""
 
+    @pytest.fixture(autouse=True)
+    def _without_named_tokens(self, monkeypatch):
+        monkeypatch.delenv("MNEMOSYNE_MCP_TOKENS", raising=False)
+
     def test_loopback_skips_auth(self, monkeypatch):
         """Default 127.0.0.1 needs no token, no env var."""
         monkeypatch.delenv("MNEMOSYNE_MCP_TOKEN", raising=False)
@@ -193,6 +197,10 @@ def _call_asgi_app(app, *, path: str, method: str, authorization: bytes):
 )
 class TestBuildSseApp:
     """`_build_sse_app` is the integration point: auth gate + middleware install."""
+
+    @pytest.fixture(autouse=True)
+    def _without_named_tokens(self, monkeypatch):
+        monkeypatch.delenv("MNEMOSYNE_MCP_TOKENS", raising=False)
 
     def test_loopback_app_has_no_auth_middleware(self, monkeypatch):
         """Loopback bind: app should not carry the bearer middleware."""
@@ -505,10 +513,10 @@ class TestMultiTokenParserEdgeCases:
             _resolve_sse_auth("0.0.0.0")
 
     def test_duplicate_secret_refused(self, monkeypatch):
-        """Two names sharing one secret make attribution ambiguous."""
+        """Secrets that collide after stripping make attribution ambiguous."""
         monkeypatch.setenv(
             "MNEMOSYNE_MCP_TOKENS",
-            _json.dumps({"hermes-family": "same-secret", "ci": "same-secret"}),
+            _json.dumps({"agent-a": "secret", "agent-b": " secret "}),
         )
         from mnemosyne.mcp_server import _resolve_sse_auth
         with pytest.raises(RuntimeError, match="unique secret"):

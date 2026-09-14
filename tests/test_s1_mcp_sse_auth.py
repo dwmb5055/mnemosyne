@@ -1,8 +1,9 @@
 """
 Regression tests for S1 (security audit, 2026-05-12):
 
-    MCP SSE transport binds 127.0.0.1 by default; binding to a non-loopback
-    host requires MNEMOSYNE_MCP_TOKEN and installs a bearer-token middleware.
+    MCP SSE transport binds 127.0.0.1 by default. MNEMOSYNE_MCP_TOKENS takes
+    precedence; either it or MNEMOSYNE_MCP_TOKEN supplies HTTP authentication,
+    which is required when binding to a non-loopback host.
 
 Pre-fix: `mnemosyne mcp --transport sse` bound `0.0.0.0` with no auth, so
 anyone on the same LAN could call /sse and /messages and read/write/delete

@@ -98,7 +98,7 @@ The built-in help lists only `hygiene audit|clean`; `status` and `restore` exist
 |---|---|
 | `mcp` | `mcp [--transport stdio\|sse\|streamable-http\|http] [--host 127.0.0.1] [--port 8080] [--path /mcp] [--json-response] [--env-file FILE] [--bank NAME]`. Starts the MCP server |
 
-stdio is the default transport. `sse` and `streamable-http` are HTTP transports; a non-loopback bind requires `MNEMOSYNE_MCP_TOKEN`. `streamable-http` (alias `http`) is the native MCP Streamable HTTP transport: clients POST JSON-RPC straight to `--path` (default `/mcp`) with no separate `/messages` route to proxy. Add `--json-response` to force JSON-only responses instead of the default SSE-upgrade streaming. A non-loopback `streamable-http` bind also requires `MNEMOSYNE_MCP_ALLOWED_HOSTS` (see below); `sse` requires only the token.
+stdio is the default transport. `sse` and `streamable-http` are HTTP transports. Either `MNEMOSYNE_MCP_TOKENS` or `MNEMOSYNE_MCP_TOKEN` satisfies their authentication gate; the named-token mapping takes precedence when both are set. `streamable-http` (alias `http`) is the native MCP Streamable HTTP transport: clients POST JSON-RPC straight to `--path` (default `/mcp`) with no separate `/messages` route to proxy. Add `--json-response` to force JSON-only responses instead of the default SSE-upgrade streaming. A non-loopback `streamable-http` bind additionally requires `MNEMOSYNE_MCP_ALLOWED_HOSTS` (see below).
 
 Bearer tokens travel as cleartext HTTP headers. On a non-loopback bind, terminate TLS in front of the server (reverse proxy or a secure tunnel) so the token never crosses the network in the clear.
 

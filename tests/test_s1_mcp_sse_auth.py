@@ -959,6 +959,11 @@ class TestAuthoritativeTokenIdentity:
     attributed to B by passing a client-supplied author_id.
     """
 
+    @pytest.fixture
+    def _before_connection_reset(self, tmp_path, monkeypatch):
+        """Select the isolated data path before the global reset imports core."""
+        monkeypatch.setenv("MNEMOSYNE_DATA_DIR", str(tmp_path))
+
     def _with_token(self, name):
         """Context-manager-free helper: run a coroutine with the request
         token bound, always restoring the previous value afterwards."""

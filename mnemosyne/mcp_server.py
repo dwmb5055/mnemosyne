@@ -13,8 +13,8 @@ Usage:
     # (no separate /messages route to proxy)
     mnemosyne mcp --transport streamable-http --port 8080
 
-    # SSE or Streamable HTTP exposed on LAN -- REQUIRES bearer token
-    # via env var
+    # SSE or Streamable HTTP exposed on LAN -- REQUIRES bearer auth
+    # via MNEMOSYNE_MCP_TOKENS or MNEMOSYNE_MCP_TOKEN
     MNEMOSYNE_MCP_TOKEN=my-secret-token mnemosyne mcp \\
         --transport sse --host 0.0.0.0 --port 8080
     MNEMOSYNE_MCP_TOKEN=my-secret-token \\
@@ -32,12 +32,12 @@ Usage:
 
 Security note (S1, 2026-05-12):
     The HTTP transports default to host=127.0.0.1 (loopback only). Binding
-    to a non-loopback address (0.0.0.0, a LAN IP, etc.) requires the env
-    var MNEMOSYNE_MCP_TOKEN to be set; clients must then send
-    ``Authorization: Bearer <token>`` on every request. Without the token
-    the server refuses to start. This prevents a LAN attacker from
-    reading/writing/deleting the user's memory via an unauthenticated
-    MCP endpoint.
+    to a non-loopback address (0.0.0.0, a LAN IP, etc.) requires either
+    MNEMOSYNE_MCP_TOKENS or MNEMOSYNE_MCP_TOKEN; clients must then send
+    ``Authorization: Bearer <token>`` on every request. Without either
+    configuration the server refuses to start. This prevents a LAN attacker
+    from reading/writing/deleting the user's memory via an unauthenticated MCP
+    endpoint.
 
     MNEMOSYNE_MCP_TOKENS (a JSON object of named secrets) is evaluated on
     every host, loopback included: when set, it opts the server into
@@ -557,7 +557,9 @@ def _build_sse_app(host: str = "127.0.0.1"):
     logic is testable without spinning up uvicorn.
 
     Returns the configured Starlette application. Raises RuntimeError if
-    host is non-loopback and MNEMOSYNE_MCP_TOKEN is unset.
+    host is non-loopback and neither MNEMOSYNE_MCP_TOKENS nor
+    MNEMOSYNE_MCP_TOKEN is configured. The named-token mapping takes
+    precedence over the single token.
     """
     if not _MCP_AVAILABLE:
         raise RuntimeError("MCP not installed. Run: pip install mnemosyne-memory[mcp]")
@@ -694,8 +696,10 @@ def _build_streamable_http_app(
     middleware-installation logic is testable without spinning up uvicorn.
 
     Returns the configured Starlette application. Raises RuntimeError when
-    host is non-loopback and MNEMOSYNE_MCP_TOKEN or
-    MNEMOSYNE_MCP_ALLOWED_HOSTS is unset.
+    host is non-loopback and neither MNEMOSYNE_MCP_TOKENS nor
+    MNEMOSYNE_MCP_TOKEN is configured, or when
+    MNEMOSYNE_MCP_ALLOWED_HOSTS is unset. The named-token mapping takes
+    precedence over the single token.
     """
     if not _MCP_AVAILABLE:
         raise RuntimeError("MCP not installed. Run: pip install mnemosyne-memory[mcp]")
@@ -764,8 +768,9 @@ async def _run_streamable_http(
     """Run MCP server over the Streamable HTTP transport.
 
     Default host is 127.0.0.1 (loopback only). Binding non-loopback requires
-    MNEMOSYNE_MCP_TOKEN (see _resolve_http_auth) *and*
-    MNEMOSYNE_MCP_ALLOWED_HOSTS (see _resolve_transport_security). Both gates
+    MNEMOSYNE_MCP_TOKENS (which takes precedence) or MNEMOSYNE_MCP_TOKEN for
+    authentication (see _resolve_http_auth), *and* MNEMOSYNE_MCP_ALLOWED_HOSTS
+    (see _resolve_transport_security). The authentication and Host-policy gates
     fail closed independently, so satisfying only one still refuses startup.
     """
     try:
@@ -855,8 +860,9 @@ def run_mcp_server(
         port: Port for the HTTP transports (ignored for stdio)
         bank: Default bank for operations (optional)
         host: Bind address for the HTTP transports (default: 127.0.0.1 --
-            loopback only). Non-loopback hosts require MNEMOSYNE_MCP_TOKEN on
-            both HTTP transports, and streamable-http additionally requires
+            loopback only). Non-loopback hosts require MNEMOSYNE_MCP_TOKENS
+            (which takes precedence) or MNEMOSYNE_MCP_TOKEN on both HTTP
+            transports, and streamable-http additionally requires
             MNEMOSYNE_MCP_ALLOWED_HOSTS.
         env_file: Path to optional .env file to load before starting.
         path: Endpoint path for streamable-http (default: /mcp)
@@ -903,11 +909,13 @@ def main(argv: Optional[list[str]] = None) -> None:
         help=(
             "Bind address for SSE and streamable-http transports (default: "
             "127.0.0.1 -- loopback only). A non-loopback bind requires "
+            "MNEMOSYNE_MCP_TOKENS (which takes precedence) or "
             "MNEMOSYNE_MCP_TOKEN on both transports, and streamable-http "
             "additionally requires MNEMOSYNE_MCP_ALLOWED_HOSTS (comma-separated "
             "Host header values, exact names or 'name:*'). Startup is refused "
-            "when either is missing. MNEMOSYNE_MCP_ALLOWED_ORIGINS is optional "
-            "and restricts browser origins."
+            "when either gate is unsatisfied. "
+            "MNEMOSYNE_MCP_ALLOWED_ORIGINS is optional and restricts browser "
+            "origins."
         ),
     )
     parser.add_argument(

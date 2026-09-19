@@ -141,9 +141,10 @@ identity is bound to the session at connect time: a later request for the
 same session presenting a different valid token is rejected.
 
 Single-token deployments (`MNEMOSYNE_MCP_TOKEN`) are unchanged: the token
-still authenticates and owns sessions, but introduces **no** author identity
--- explicit `author_id` arguments and `MNEMOSYNE_AUTHOR_ID` keep their prior
-precedence, exactly as before multi-token support existed.
+still authenticates requests but binds no session-owning principal, and
+introduces **no** author identity -- explicit `author_id` arguments and
+`MNEMOSYNE_AUTHOR_ID` keep their prior precedence, exactly as before
+multi-token support existed.
 
 ### Streamable HTTP Host/Origin policy
 
